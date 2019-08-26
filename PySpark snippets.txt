@@ -1,0 +1,72 @@
+## Using PySpark, iterate a directory
+
+
+#1
+
+hadoop = sc._jvm.org.apache.hadoop
+
+fs = hadoop.fs.FileSystem
+conf = hadoop.conf.Configuration() 
+path = hadoop.fs.Path('/jiostore/ETL/')
+paths=[]
+for f in fs.get(conf).listStatus(path):
+    paths.append(f.getPath())
+
+
+#2
+import os
+import subprocess
+
+cmd = 'hdfs dfs -ls /user/path'
+files = subprocess.check_output(cmd, shell=True).strip().split('\n')
+for path in files:
+  print path
+
+
+#3
+
+cmd2 = 'hdfs dfs -find jiostore/ETL/20190824/*.csv'
+files = subprocess.check_output(cmd2, shell=True).strip().split('\n')
+for path in files:
+  filename = path.split(os.path.sep)[-1].split('.csv')[0]
+  print path, filename
+
+
+
+
+dir=[]   	    
+for i in paths:
+    cmd2 = 'hdfs dfs -find jiostore/ETL/'+i+'/*.csv'
+    files = subprocess.check_output(cmd2, shell=True).strip().split('\n')
+    for path in files:
+        dir.append(path)
+
+
+
+
+
+## read multiple df from dir
+
+for i in dir:
+    dfs.append(spark.read.option('inferschema','true').option('header','true').csv(i))
+
+
+
+
+## Union multiple df's
+
+#1
+from functools import reduce  
+from pyspark.sql import DataFrame
+
+def unionAll(*dfs):
+    return reduce(DataFrame.unionAll, dfs)
+
+unionAll(td2, td3, td4, td5, td6, td7, td8, td9, td10)
+
+
+#2
+import functools 
+
+def unionAll(dfs):
+    return functools.reduce(lambda df1,df2: df1.union(df2.select(df1.columns)), dfs)
